@@ -722,27 +722,63 @@ function constrain(num, lo, hi) {
     };
     //song editing (still undone)
     //song part editing:
-
     track.prototype.removePart = function (ind) {
-        //this.track.data.splice
+        this.track.data.splice(ind,1);
+        this.removeAll(ind);
+        this.track.data.forEach(function(val){
+            if(val>ind){val--;}
+        });
     };
-    track.prototype.addPart = function () { };
-    track.prototype.setPart = function () { };
-    track.prototype.removeRedundantParts = function () { };
-    track.prototype.setPartKeySig = function () { };
-    track.prototype.setPartTimeSig = function () { };
-    track.prototype.setPartTitle = function () { };
-    track.prototype.setPartTempo = function () { };
+    track.prototype.addPart = function (dat) {
+        this.track.data.push(dat);
+    };
+    track.prototype.setPart = function (ind, val) {
+        this.track.data.splice[ind]=val;
+    };
+    track.prototype.removeRedundantParts = function () {
+        var matches=[];
+        var tr=this;
+        this.track.data.forEach(function(p, ind){
+            for(var sc=ind+1;sc<tr.track.data.length;sc++){
+                if(tr.track.data[sc]===p){
+                    matches.push([ind,sc]);
+                }
+            }
+        });
+        //console.log(matches)
+        matches.forEach(function(m){
+            tr.track.order.forEach(function(r,ind){
+                if(r===m[1]){
+                    console.log(tr.track.order)
+                    tr.track.order.splice(ind,1,m[0]);
+                }
+            });
+            tr.removePart(m);
+        });
+    };
+    track.prototype.setPartKeySig = function (partnum,value) {
+        this.track.data[partnum].keySig=value;
+    };
+    track.prototype.setPartTimeSig = function (partnum,value) {
+        this.track.data[partnum].timeSig=value;
+    };
+    track.prototype.setPartTitle = function (partnum,value) {
+        this.track.data[partnum].title=value;
+    };
+    track.prototype.setPartTempo = function (partnum,value) {
+        this.track.data[partnum].tempo=value;
+    };
     //note editing
-    track.prototype.removeNote = function () { };
-    track.prototype.addNote = function () { };
-    track.prototype.setNote = function () { };
-    track.prototype.removeRedundantNotes = function () { };
-    track.prototype.setNoteTime = function () { };
-    track.prototype.setNoteWaveform = function () { };
-    track.prototype.setNoteGainPattern = function () { };
-    track.prototype.setNoteFrequencyPattern = function () { };
-    track.prototype.setNoteFrequency = function () { };
+    
+    track.prototype.removeNote = function (songPart) { };
+    track.prototype.addNote = function (songPart) { };
+    track.prototype.setNote = function (songPart) { };
+    track.prototype.removeRedundantNotes = function (songPart) { };
+    track.prototype.setNoteTime = function (songPart) { };
+    track.prototype.setNoteWaveform = function (songPart) { };
+    track.prototype.setNoteGainPattern = function (songPart) { };
+    track.prototype.setNoteFrequencyPattern = function (songPart) { };
+    track.prototype.setNoteFrequency = function (songPart) { };
 
 }//track stuff
 
@@ -771,6 +807,17 @@ note to self: since the limits for frequency with the oscillator node are 24 KHz
 
 
 var t = new track();
+t.addPart("part 0");
+t.addPart("part 0");
+t.addPart("part 2");
+t.addPart("part 3");
+t.AddToOrder(0);
+t.AddToOrder(1);
+t.AddToOrder(2);
+t.AddToOrder(3);
+t.removeRedundantParts();
+console.table(t.track.data);
+console.table(t.track.order);
 //demo
 /*
 audio.prototype.check=function(){
@@ -834,8 +881,8 @@ canv.onclick = function () {
 * {
 *      title:String,                                                       not done
 *      tempo:Number,                                                       not done
-*      timesig:ArrayOfTwoNumbers, (need to get a little help on this)      not done
-*      keysig:Number, (for score music editor purposes. It's optional)     not done
+*      timeSig:ArrayOfTwoNumbers, (need to get a little help on this)      not done
+*      keySig:Number, (for score music editor purposes. It's optional)     not done
 *      data:ArrayOfNotes                                                   not done
 * }
 * 
@@ -849,5 +896,5 @@ canv.onclick = function () {
 *      waveformind:Number                                                  not done
 * }
 * 
-* when a note is recieved with null gain and requency programs and a null frequency, then it's a rest and is merely intended as filler to track positions of rests for score editing mode. In piano roll editing (which I'll make first) the rests basically don't exist
+* when a note is recieved with null gain and frequency programs and a null frequency, then it's a rest and is merely intended as filler to track positions of rests for score editing mode. In piano roll editing (which I'll make first) the rests basically don't exist
 **/
