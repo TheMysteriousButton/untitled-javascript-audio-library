@@ -7,30 +7,3 @@ body {
     color: lightslategray;
     background: darkslategrey;
 }
-
-.boxed {
-    font-size: 14px;
-    background: lightslategray;
-    border-radius: 1em;
-    padding: 1em;
-    margin: 5em;
-}
-
-a:link {
-    color: black;
-}
-a:visited {
-    color: black;
-}
-  
-a:hover {
-    color: green;
-    background-color: transparent;
-    text-decoration: underline;
-}
-  
-a:active {
-    color: green;
-    background-color: transparent;
-    text-decoration: underline;
-}
