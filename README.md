@@ -1,4 +1,4 @@
-# stuff
+# untitled-javascript-audio-library
 
 un-named and unfinished audio library written in JavaScript. Uses web audio API.
 
