@@ -2,6 +2,7 @@
 var canv = document.getElementById("canvas");
 canv.width = window.innerWidth;
 canv.height = window.innerHeight;
+//the canvas is merely for testing puroses
 
 /*this is the big o'l juicy documentation for the sound library
 this program uses the audioContext to create sounds and music for all those who want to use it in their own program. It can do basic notes of any possible waveform, sound panning, glissondo, and more.
@@ -573,6 +574,13 @@ function constrain(num, lo, hi) {
     };
 }//audio stuff
 {
+    /**
+     * this is the constructor for a track object
+     * a track object lets you easily manipulate data about the track or import/export it
+     * 
+     * @param {JSON} trackdat
+     * data input (optional). if not present, it will default to blank song
+    */
     function track(trackdat) {
         this.track = trackdat || {
             "title": null,
@@ -587,29 +595,58 @@ function constrain(num, lo, hi) {
         //why you would use this with an existing track object is because you can edit it with the protoype of this function
     }
     //editing author
+    /** 
+    * @param {String} author
+    * 
+    * sets author for song
+    **/
     track.prototype.setAuthor = function (author) {
         if (typeof (author) !== "string") {
             //throw{"message":"where you called track.setAuthor, the input is not a string. got "+author};
         }
         this.track.author = author;
     };
+    /** 
+    * 
+    * returns author for song
+    **/
     track.prototype.getAuthor = function () {
         return this.track.author;
     };
     //editing title
+    /** 
+    * @param {String} title
+    * 
+    * sets title for song
+    **/
     track.prototype.setTitle = function (title) {
         if (typeof (title) !== "string") {
             //throw{"message":"where you called track.setAuthor, the input is not a string. got "+author};
         }
         this.track.title = title;
     };
+    /** 
+    returns title of song
+    **/
+
     track.prototype.getTitle = function () {
         return this.track.title;
     };
     //editing gain programs
+    /** 
+    * @param {Number} ind
+    * 
+    * index to remove gain program from the list
+    **/
     track.prototype.deleteGainProgram = function (ind) {
         this.track.gainPrograms.splice(ind, 1);
     };
+    /** 
+    * @param {Number} ind
+    * index to change gain program at
+    * @param {JSON} dat 
+    * value to change it to
+    **/
     track.prototype.setGainProgram = function (ind, dat) {
         var res = audio.prototype.validateProgram(dat);
         if (res) {
@@ -769,16 +806,96 @@ function constrain(num, lo, hi) {
         this.track.data[partnum].tempo=value;
     };
     //note editing
-    
-    track.prototype.removeNote = function (songPart) { };
-    track.prototype.addNote = function (songPart) { };
-    track.prototype.setNote = function (songPart) { };
-    track.prototype.removeRedundantNotes = function (songPart) { };
-    track.prototype.setNoteTime = function (songPart) { };
-    track.prototype.setNoteWaveform = function (songPart) { };
-    track.prototype.setNoteGainPattern = function (songPart) { };
-    track.prototype.setNoteFrequencyPattern = function (songPart) { };
-    track.prototype.setNoteFrequency = function (songPart) { };
+    /**
+     * organizes all the notes in this song part by time. this is important for the player to function correctly. called automatically in these functions:
+     * addNote
+     * setNote
+     * setNoteTime
+     * 
+     * @param {Number} part 
+     * the index of the song part to organize
+     */
+    track.prototype.organizeNotes=function(part){
+        this.track.data[part].data.sort(function(a,b){return a.time-b.time;});
+    };
+    /**
+     * removes note from song part
+     * @param {Number} songPart index of songpart
+     * @param {Number} noteNum index of note number
+     */
+    track.prototype.removeNote = function (songPart,noteNum) {
+        this.track.data[songPart].data.splice(noteNum,1);
+    };
+    /**
+     * adds a note to a song part
+     * @param {Number} songPart the songpart index
+     * @param {Number} data the data of the note to add
+     */
+    track.prototype.addNote = function (songPart,data) {
+        this.track.data[songPart].data.push(data);
+        this.organizeNotes(songPart);
+    };
+    /**
+     * re-writes a note at a song part
+     * @param {Number} songPart the songpart index
+     * @param {Number} index the index of the note to change
+     * @param {Number} data the data of the note to add
+     */
+    track.prototype.setNote = function (songPart,index,value) {
+        var toO=false;
+        if(value.time!==this.track.data[songPart].data[index].time){
+            toO=false;
+        }
+        this.track.data[songPart].data[index]=value;
+        if(toO){
+            this.organizeNotes(songPart);
+        }
+    };
+    /**
+     * removes all identical notes. Identical means that all their attributes are equal and therefore, they are unnescessary
+     * @param {number} songPart index of song part to operate on
+     */
+    track.prototype.removeRedundantNotes = function (songPart) {
+        var rm=this;
+        this.track.data[songPart].data.forEach(function(n, ind,arr){
+            for(var tn=ind+1;tn<arr.length;tn++){
+                if(n===arr[tn]){
+                    rm.track.data[songPart].data.splice(tn,1);
+                    tn--;
+                }
+            }
+        });
+    };
+    /**
+     * sets time for a specific note in a specific songpart
+     * @param {Number} songPart songpart for note
+     * @param {Number} noteNum inex of note
+     */
+    track.prototype.setNoteTime = function (songPart, noteNum) { };
+    /**
+     * sets waveform for a specific note in a specific songpart
+     * @param {Number} songPart songpart for note
+     * @param {Number} noteNum inex of note
+     */
+    track.prototype.setNoteWaveform = function (songPart, noteNum) { };
+    /**
+     * sets gain pattern for a specific note in a specific songpart
+     * @param {Number} songPart songpart for note
+     * @param {Number} noteNum inex of note
+     */    
+    track.prototype.setNoteGainPattern = function (songPart, noteNum) { };
+    /**
+     * sets frequency pattern for a specific note in a specific songpart
+     * @param {Number} songPart songpart for note
+     * @param {Number} noteNum inex of note
+     */        
+    track.prototype.setNoteFrequencyPattern = function (songPart, noteNum) { };
+    /**
+     * sets frequnecy for a specific note in a specific songpart
+     * @param {Number} songPart songpart for note
+     * @param {Number} noteNum inex of note
+     */    
+    track.prototype.setNoteFrequency = function (songPart, noteNum) { };
 
 }//track stuff
 
@@ -807,17 +924,17 @@ note to self: since the limits for frequency with the oscillator node are 24 KHz
 
 
 var t = new track();
-t.addPart("part 0");
-t.addPart("part 0");
-t.addPart("part 2");
-t.addPart("part 3");
-t.AddToOrder(0);
-t.AddToOrder(1);
-t.AddToOrder(2);
-t.AddToOrder(3);
-t.removeRedundantParts();
-console.table(t.track.data);
-console.table(t.track.order);
+t.addPart({data:[]});
+t.addNote(0,"note 0");
+t.addNote(0,"note 1");
+t.addNote(0,"note 2");
+t.addNote(0,"note 3");
+t.addNote(0,"note 4");
+t.addNote(0,"note 5");
+t.addNote(0,"note 6");
+t.addNote(0,"note 7");
+t.removeRedundantNotes(0)
+console.table(t.track.data[0].data);
 //demo
 /*
 audio.prototype.check=function(){
