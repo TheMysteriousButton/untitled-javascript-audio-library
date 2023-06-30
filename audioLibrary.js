@@ -3,8 +3,9 @@ var canv = document.getElementById("canvas");
 canv.width = window.innerWidth;
 canv.height = window.innerHeight;
 //the canvas is merely for testing puroses
+//need to make it so that when the value is ommitted in the functions that add things, a default value is given
 
-/*this is the big o'l juicy documentation for the sound library
+/*this is the big o'l juicy documentation for part of the sound library
 this program uses the audioContext to create sounds and music for all those who want to use it in their own program. It can do basic notes of any possible waveform, sound panning, glissondo, and more.
 
 fftencoder doc:
@@ -319,6 +320,10 @@ function constrain(num, lo, hi) {
     audioProgram.prototype.exponentialRampToValueAtTime = audioProgram.prototype.expramp;
 }//audioProgram stuff
 {
+    /**
+     * constructs an audio object
+     * note that this will start the audioContext, and if you haven't already made a user-gesture on the page, it will not be allowed to start, resulting in a useless audio object that cannot play notes
+     */
     var audio = function () {
         var iife = (function (a) { return this[a]; })("eval");
         this.audioContext = (0, iife)("new(window.AudioContext||window.webkitAudioContext)()");
@@ -328,6 +333,11 @@ function constrain(num, lo, hi) {
             throw { message: "in order to create an audio obect, you need to initialize the JSON object like this:\"var JSON=(function(){return this.JSON})();//jshint ignore:line\" keep the comment. It's important." };
         }
     };
+    /**
+     * checks to see if a program is valid
+     * @param {JSON} Pro program to check
+     * @returns true if program is valid, error string if it is not
+     */
     audio.prototype.validateProgram = function (Pro) {
         try {
             if (Pro === undefined) { throw "program not defined"; }
@@ -405,6 +415,16 @@ function constrain(num, lo, hi) {
             return f;
         }
     };//returns validity status
+    /**
+     * plays a note given these parameters:
+     * @param {Object} gainProgram a gain audioProgram object or a JSON created by calling audioProgram.export()
+     * @param {Object} frequencyProgram a frequency audioProgram object or a JSON created by calling audioProgram.export()
+     * @param {Object} waveform the waveform for the notes to be played with. can be an array of samples, an array of sine-cosine pairs, a number from 0-3 representing the four preset waveforms, a string that represents one of the preset waveforms, or as a periodicWave object (superior performance)
+     * @param {Number} volume number from 0 to 1 that specified the volume where 1 is full volume and 0 is mute
+     * @param {Number} freq frequency for note to be played at (modulated by frequencyProgram) between 0 hz and 24 khz
+     * @param {Number} length (optional) sets the length for the note to be played in seconds. if absent, it is assumed that the note is of indefinite length and the oscillator will be returned after starting the note so it may be terminated at any time
+     * @returns an error string if something went wrong, or an oscillator if the length parameter is not present.
+     */
     audio.prototype.playTone = function (gainProgram, frequencyProgram, waveform, volume, freq, length) {
         try {
             volume = volume || 0.5;
@@ -413,11 +433,19 @@ function constrain(num, lo, hi) {
             var oscil = ctx.createOscillator();
             var g = ctx.createGain();
             var ct = ctx.currentTime;
-            if (!this.validateProgram(gainProgram)) {
-                throw "invalid gain program: " + this.validateProgram(gainProgram);
+            if(gainProgram instanceof audioProgram){
+                gainProgram=gainProgram.export();
+            }else{
+                if (!this.validateProgram(gainProgram)) {
+                    throw "invalid gain program: " + this.validateProgram(gainProgram);
+                }
             }
-            if (!this.validateProgram(gainProgram)) {
-                throw "invalid frequency program: " + this.validateProgram(gainProgram);
+            if(frequencyProgram instanceof audioProgram){
+                frequencyProgram=frequencyProgram.export();
+            }else{
+                if (!this.validateProgram(frequencyProgram)) {
+                    throw "invalid frequency program: " + this.validateProgram(frequencyProgram);
+                }
             }
             if (!gainProgram.type) {
                 throw "invalid gain program: frequency program inputted instead";
@@ -594,6 +622,44 @@ function constrain(num, lo, hi) {
         //make track or default track
         //why you would use this with an existing track object is because you can edit it with the protoype of this function
     }
+    /**
+     * sets up the blacklist corrector so you can export text-based compression and encoding without worrying about weird blankspace chars and other nonsense
+     */
+    track.prototype.setUpBlackList=function(){
+        //jshint evil:true
+        var list=[
+        [-1,31],[126,160],173,888,889,[895,899],907,909,930,1367,1368,1424,[1479,1487],[1514,1518],[1524,1540],1562,1564,1565,1806,1807,1867,1868,[1969,1983],2044,2094,2095,2111,2140,2141,[2142,2207],2229,[2237,2259],[2384,2388],2436,2473,2481,[2482,2485],2490,2491,2501,2502,2505,2506,[2510,2523],2526,2532,2533,2559,2560,[2570,2574],2577,2578,2601,2609,2612,2615,2618,2619,[2626,2630],2633,2634,[2637,2640],[2641,2648],2653,[2654,2661],[2678,2688],2692,2702,2706,2729,2737,2740,2746,2747,2758,2762,2766,2767,[2768,2783],2788,2789,[2801,2808],2816,2820,2829,2830,2833,2834,2857,2865,2868,2874,2875,2885,2886,2889,2890,[2893,2900],[2903,2907],2910,2916,2917,[2935,2945],2948,[2954,2957],2961,[2965,2968],2971,2973,[2975,2978],[2980,2983],[2986,2989],[3001,3005],[3010,3013],3017,3022,3023,[3024,3030],[3031,3045],[3066,3071],3085,3089,3130,3131,3141,3145,[3149,3156],3159,3163,3164,3166,3167,3172,3173,[3183,3190],3213,3217,3241,3252,3258,3259,3269,3273,[3277,3284],[3286,3292],3295,3300,3301,3312,[3314,3327],3341,3345,3397,3401,[3407,3411],3428,3429,3456,3460,[3478,3481],3506,3516,3518,3519,[3526,3529],[3530,3534],3541,3543,[3551,3557],3568,3569,[3572,3584],[3642,3646],[3675,3712],3715,3717,3718,3721,3723,3724,[3725,3731],3736,3744,3748,3750,3752,3753,3756,3770,3774,3775,3781,3783,3790,3791,3802,3803,[3807,3839],3912,[3948,3952],3992,4029,4045,[4052,4056],[4058,4095],4294,[4295,4300],4302,4303,4447,4448,4681,4686,4687,4695,4697,4702,4703,4745,4750,4751,4785,4790,4791,4799,4801,4806,4807,4823,4881,4886,4887,4955,4956,
+        [4988,4991],[5017,5023],[5117,5119],[5788,5791],[5880,5919],[5941,5951],[5971,6015],6068,6069,6110,6110,[6121,6127],[6137,6143],[6154,6159],6175,[6263,6271],[6314,6319],[6389,6399],6431,[6443,6447],[6459,6463],[6464,6467],6510,6511,[6516,6527],[6571,6575],[6601,6607],[6618,6621],6684,6685,[6687,6911],[6987,6991],[7036,7039],[7155,7163],[7223,7226],[7241,7244],[7295,7311],7355,7356,[7367,7378],[7379,7400],7405,7412,[7414,7417],[7418,7423],[7626,7677],8006,8007,8014,8015,8024,8026,8028,8030,8062,8063,8117,8133,8148,8149,8156,8176,8177,8181,[8190,8207],[8231,8239],[8286,8303],8306,8307,8335,[8348,8351],[8384,8412],[8413,8431],[8432,8447],[8587,8591],[9210,9214],[9254,9279],[9290,9311],11158,11159,[11193,11196],11209,[11217,11243],[11247,11263],[11507,11512],11558,[11559,11564],11566,11566,[11623,11630],[11632,11646],[11670,11679],11687,11695,11703,11711,11719,11727,11735,11743,[11844,11903],11930,[12019,12031],[12245,12271],[12283,12288],[12329,12333],12352,[12438,12442],[12543,12548],[12589,12592],12644,12687,[12727,12735],[12771,12783],12831,[19893,19903],[40917,40959],[42124,42127],[42182,42191],[42539,42559],[42743,42751],[42954,42959],42962,42964,[42969,42993],[43007,43055],[43065,43071],[43127,43135],[43205,43213],[43225,43231],[43311,43359],[43388,43391],43470,[43481,43485],43519,[43574,43583],43598,43599,43610,43611,[43647,43776],43783,43784,43791,43792,[43798,43807],43815,43823,[43883,43887],44014,44015,[44025,44031],[55203,55215],[55238,55242],[55291,61896],64046,64047,[64109,64255],[64262,64274],[64279,64284],64311,64317,64319,64322,64325,[64449,64466],[64511,64519],[64521,64525],[64526,64529],[64530,64560],[64562,64562],[64562,64574],[64580,64589],[64591,64599],[64601,64605],[64611,64617],64619,64620,64625,64626,[64629,64653],64656,64658,64659,[64660,64667],64679,64681,64683,[64684,64687],[64688,64712],64727,64729,[64733,64753],[64756,64815],[64816,64827],[64831,64903],[64904,65009],65011,[65012,65017],[65021,65039],[65049,65055],[65059,65069],65107,65127,[65131,65135],65141,[65276,65280],65438,65439,65440,[65470,65473],65480,65481,65488,65489,65496,65497,[65500,65503],65511,[65518,65531],[65531,65535]
+        ];
+        var outst='function testRet(){return function(val){';
+        list.forEach(function(c){
+            if(c instanceof Array){
+                outst+='if(val>'+c[0]+'){val+='+(c[1]-c[0])+';}\n';
+                outst+='else{return val;}\n';
+            }else{
+                outst+='if(val>'+c+'){val++;}\n';
+                outst+='else{return val;}\n';
+                
+            }
+        });
+        outst+='}};testRet();';
+        track.prototype.correct=eval(outst);
+        var outst='function testRet(){return function(val){var outval=val;';
+        for(var f=0;f<list.length;f++){
+            var c=list[f];
+            if(c instanceof Array){
+                outst+='if(val>'+c[0]+'){outval-='+((c[1]-c[0]))+';}\n';
+                outst+='else{return outval;}\n';
+            }else{
+                outst+='if(val>'+c+'){outval-=1;}\n';
+                outst+='else{return outval;}\n';
+                
+            }
+        }
+        outst+='}};testRet();';
+        track.prototype.uncorrect=eval(outst);
+        //jshint evil:false
+    };
     //editing author
     /** 
     * @param {String} author
@@ -869,34 +935,59 @@ function constrain(num, lo, hi) {
     /**
      * sets time for a specific note in a specific songpart
      * @param {Number} songPart songpart for note
-     * @param {Number} noteNum inex of note
+     * @param {Number} noteNum index of note
+     * @param {Number} value what to set it to
      */
-    track.prototype.setNoteTime = function (songPart, noteNum) { };
+    track.prototype.setNoteTime = function (songPart, noteNum,value) {
+        this.track.data[songPart].data[noteNum].time=value;
+    };
     /**
      * sets waveform for a specific note in a specific songpart
      * @param {Number} songPart songpart for note
      * @param {Number} noteNum inex of note
-     */
-    track.prototype.setNoteWaveform = function (songPart, noteNum) { };
+     * @param {Number} value what to set it to
+    */
+    track.prototype.setNoteWaveform = function (songPart, noteNum,value) {
+        this.track.data[songPart].data[noteNum].waveform=value;
+    };
     /**
      * sets gain pattern for a specific note in a specific songpart
      * @param {Number} songPart songpart for note
      * @param {Number} noteNum inex of note
+     * @param {Number} value what to set it to
      */    
-    track.prototype.setNoteGainPattern = function (songPart, noteNum) { };
+    track.prototype.setNoteGainPattern = function (songPart, noteNum,value) {
+        this.track.data[songPart].data[noteNum].gainProgram=value;
+    };
     /**
      * sets frequency pattern for a specific note in a specific songpart
      * @param {Number} songPart songpart for note
      * @param {Number} noteNum inex of note
+     * @param {Number} value what to set it to
      */        
-    track.prototype.setNoteFrequencyPattern = function (songPart, noteNum) { };
+    track.prototype.setNoteFrequencyPattern = function (songPart, noteNum,value) {
+        this.track.data[songPart].data[noteNum].frequencyProgram=value;
+    };
     /**
      * sets frequnecy for a specific note in a specific songpart
      * @param {Number} songPart songpart for note
      * @param {Number} noteNum inex of note
+     * @param {Number} value what to set it to
      */    
-    track.prototype.setNoteFrequency = function (songPart, noteNum) { };
-
+    track.prototype.setNoteFrequency = function (songPart, noteNum,value) {
+        this.track.data[songPart].data[noteNum].frequency=value;
+    };
+    track.prototype.encode=function(){
+        var outst="";
+        //we need to do some lossless compression here.
+        //first of all, we need to scan all the waveforms and make them all un-fft'd numeric arrays
+        //then we need to remove everything redundant
+        //then we need to use some kind of programed-in assumption system so we can save data by assuming on the sending and resceiving side certain things.
+        //then we need to convert it into base 56099
+        //then we simply corect it with blackList and add the corresponding character to outst.
+        //lastly, we do some lossless compression with Burrows–Wheeler transform, then RLE, then a table comressor with huffman encoding
+        //then we export the result
+    };
 }//track stuff
 
 /*
@@ -989,28 +1080,28 @@ canv.onclick = function () {
 *      freqpros:arrayOfFrequencyPrograms,              done
 *      gainpros:arrayOfGainPrograms,                   done
 *      waveforms:arrayOfCustomWaveforms,               done
-*      data:arrayOfSongParts                           not done
+*      data:arrayOfSongParts                           done
 * }
 * 
 * editing of this stuff is where it gets REALLY weird
 * 
 * song part here:
 * {
-*      title:String,                                                       not done
-*      tempo:Number,                                                       not done
-*      timeSig:ArrayOfTwoNumbers, (need to get a little help on this)      not done
-*      keySig:Number, (for score music editor purposes. It's optional)     not done
-*      data:ArrayOfNotes                                                   not done
+*      title:String,                                                       done
+*      tempo:Number,                                                       done
+*      timeSig:ArrayOfTwoNumbers, (need to get a little help on this)      done
+*      keySig:Number, (for score music editor purposes. It's optional)     done
+*      data:ArrayOfNotes                                                   done
 * }
 * 
 * note here:
 * 
 * {
-*      time:Number                                                         not done
-*      freqproind:Number                                                   not done
-*      gainproind:Number                                                   not done
-*      freq:Number                                                         not done
-*      waveformind:Number                                                  not done
+*      time:Number                                                               done
+*      frequencyProgram:Number                                                   done
+*      gainProgram:Number                                                        done
+*      frequeny:Number                                                           done
+*      waveform:Number                                                           done
 * }
 * 
 * when a note is recieved with null gain and frequency programs and a null frequency, then it's a rest and is merely intended as filler to track positions of rests for score editing mode. In piano roll editing (which I'll make first) the rests basically don't exist
