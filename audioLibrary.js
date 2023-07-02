@@ -1,7 +1,8 @@
 
-var canv = document.getElementById("canvas");
-canv.width = window.innerWidth;
-canv.height = window.innerHeight;
+//var canv = document.getElementById("canvas");
+//canv.width = window.innerWidth;
+//canv.height = window.innerHeight;
+
 //the canvas is merely for testing puroses
 //need to make it so that when the value is ommitted in the functions that add things, a default value is given
 
@@ -47,7 +48,19 @@ function constrain(num, lo, hi) {
     if (num > hi) { return hi; }
     return num;
 }
-
+function map(value, istart, istop, ostart, ostop) {
+    return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
+}
+/**
+ * reterns the persent of a value given a range for it to be in
+ * @param {number} low the low value for the range
+ * @param {number} high the high value for the range
+ * @param {number} val the number you want a percent for
+ * 
+**/
+function rangeToPercent(low,high,val){
+    return map(val,low,high,0,100);
+}
 {
     var fftencoder = function () {
         this.complexAdd = function (a, b) {
@@ -600,6 +613,46 @@ function constrain(num, lo, hi) {
             return t;
         }
     };
+    audio.prototype.trackPlayer = function (track){
+        this.track=track;
+        this.speed=1;
+        this.loop=false;
+        this.isPlaying=false;
+        this.time=Date.now();
+        this.startTime=Date.now();
+    };
+    audio.prototype.trackPlayer.prototype.runFrame = function (){
+        this.time=Date.now();//update time
+        //where the hard stuff is
+    };
+    audio.prototype.trackPlayer.prototype.getLength = function (){
+        var ln=this.track.data[this.track.data.length-1].data[this.track.data[this.track.data.length-1].data.length-1];
+        return ln.time+ln.length;//length of song is last note time plus last note length
+    };
+    audio.prototype.trackPlayer.prototype.setSpeed = function (speed){
+        this.speed=speed;
+    };
+    audio.prototype.trackPlayer.prototype.setPosition = function (){
+        //var playTimetime=
+    };
+    audio.prototype.trackPlayer.prototype.play = function (){
+        var timeDiff=time-startTime;
+        this.time=Date.now();
+        this.startTime=time-timeDiff;
+        this.isPlaying=true;
+    };
+    audio.prototype.trackPlayer.prototype.pause = function (){
+        
+    };
+    audio.prototype.trackPlayer.prototype.stop = function (){
+        this.isPlaying=false;
+        this.reset();
+    };
+    audio.prototype.trackPlayer.prototype.loop = function (){
+        this.loop=true;
+    };
+
+
 }//audio stuff
 {
     /**
@@ -977,16 +1030,30 @@ function constrain(num, lo, hi) {
     track.prototype.setNoteFrequency = function (songPart, noteNum,value) {
         this.track.data[songPart].data[noteNum].frequency=value;
     };
+    /**
+     * sets length of a specific note in a specific songpart
+     * @param {Number} songPart songpart for note
+     * @param {Number} noteNum index of note
+     * @param {Number} value what to set it to
+     */    
+    track.prototype.setNoteFrequency = function (songPart, noteNum,value) {
+        this.track.data[songPart].data[noteNum].length=value;
+    };
+
     track.prototype.encode=function(){
         var outst="";
         //we need to do some lossless compression here.
-        //first of all, we need to scan all the waveforms and make them all un-fft'd numeric arrays
+        //first of all, we need to scan all the custom waveforms and make them all un-fft'd numeric arrays
         //then we need to remove everything redundant
         //then we need to use some kind of programed-in assumption system so we can save data by assuming on the sending and resceiving side certain things.
         //then we need to convert it into base 56099
         //then we simply corect it with blackList and add the corresponding character to outst.
         //lastly, we do some lossless compression with Burrows–Wheeler transform, then RLE, then a table comressor with huffman encoding
         //then we export the result
+    };
+    track.prototype.decode=function(){
+        var outst="";
+        //undo what I did in the last one except for the first two steps, for they are merely optamization
     };
 }//track stuff
 
@@ -1013,7 +1080,7 @@ please note that the frequency patterns do not set the frequency of the note bei
 note to self: since the limits for frequency with the oscillator node are 24 KHz and 0 hz, I need to make it limit the piano roll editor to all rows that are between 20hz and 24Khz, just to be as versatile as human hearing. There is no use at all making notes higher or lower.
 */
 
-
+/*
 var t = new track();
 t.addPart({data:[]});
 t.addNote(0,"note 0");
@@ -1034,7 +1101,7 @@ audio.prototype.check=function(){
         this.audioContext=(0, iife)("new(window.AudioContext||window.webkitAudioContext)()");
     }
 };
-*/
+
 var proAudio;
 var gpro;
 var nup = 256;//512 sample square wave
@@ -1070,28 +1137,28 @@ canv.onclick = function () {
     fpro = fpro.export();
     proAudio.playTone(gpro, fpro, 0, 1, 440, 1);
 };
-
+*/
 /**me finding the format for song storage
 * 
 * {
-*      title:String,                                   done
-*      author:String,                                  done
-*      order:NumericArray,                             done
-*      freqpros:arrayOfFrequencyPrograms,              done
-*      gainpros:arrayOfGainPrograms,                   done
-*      waveforms:arrayOfCustomWaveforms,               done
-*      data:arrayOfSongParts                           done
+*      title:String,                                                             done
+*      author:String,                                                            done
+*      order:NumericArray,                                                       done
+*      freqpros:arrayOfFrequencyPrograms,                                        done
+*      gainpros:arrayOfGainPrograms,                                             done
+*      waveforms:arrayOfCustomWaveforms,                                         done
+*      data:arrayOfSongParts                                                     done
 * }
 * 
 * editing of this stuff is where it gets REALLY weird
 * 
 * song part here:
 * {
-*      title:String,                                                       done
-*      tempo:Number,                                                       done
-*      timeSig:ArrayOfTwoNumbers, (need to get a little help on this)      done
-*      keySig:Number, (for score music editor purposes. It's optional)     done
-*      data:ArrayOfNotes                                                   done
+*      title:String,                                                             done
+*      tempo:Number,                                                             done
+*      timeSig:ArrayOfTwoNumbers, (need to get a little help on this)            done
+*      keySig:Number, (for score music editor purposes. It's optional)           done
+*      data:ArrayOfNotes                                                         done
 * }
 * 
 * note here:
@@ -1102,6 +1169,7 @@ canv.onclick = function () {
 *      gainProgram:Number                                                        done
 *      frequeny:Number                                                           done
 *      waveform:Number                                                           done
+*      length  :Number                                                           not done
 * }
 * 
 * when a note is recieved with null gain and frequency programs and a null frequency, then it's a rest and is merely intended as filler to track positions of rests for score editing mode. In piano roll editing (which I'll make first) the rests basically don't exist
