@@ -5,6 +5,7 @@ if(canv!==null){
     canv.height = window.innerHeight;
 }
 //the canvas is merely for testing puroses
+//it is not really nescessary
 //need to make it so that when the value is ommitted in the functions that add things, a default value is given
 
 /*this is the big o'l juicy documentation for part of the sound library
